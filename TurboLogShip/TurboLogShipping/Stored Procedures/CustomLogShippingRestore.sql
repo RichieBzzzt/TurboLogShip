@@ -29,6 +29,9 @@ FROM [$(msdb)].dbo.log_shipping_secondary scndry
 INNER JOIN [$(msdb)].dbo.log_shipping_secondary_databases db ON db.secondary_id = scndry.secondary_id
 WHERE db.secondary_database = @Database;
 
+INSERT INTO [TurboLogShipping].[TurboLogShippingLogging]
+VALUES (CURRENT_TIMESTAMP, @Database, @RestoreJobName, 'Initialising Custom Job Restore')
+
 SELECT @FolderDbNameLength = LEN(last_restored_file) - CHARINDEX('\', REVERSE(last_restored_file)) + 1
 FROM [$(msdb)].dbo.log_shipping_secondary_databases db
 WHERE db.secondary_database = @Database;
