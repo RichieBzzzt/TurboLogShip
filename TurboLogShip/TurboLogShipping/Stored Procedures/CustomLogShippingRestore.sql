@@ -18,7 +18,7 @@ DECLARE @chkCount INT;
 DECLARE @FileTypeLength TINYINT;
 DECLARE @RightTrimForBackupInt TINYINT;
 DECLARE @FolderDbNameLength TINYINT;
-DECLARE @Debug BIT = 0;-- req'd for troubleshooting
+DECLARE @Debug BIT = 0;-- req'd for troubleshooting/testing
 DECLARE @maxSessionId INT
 
 SELECT @maxSessionId = MAX(session_id)
