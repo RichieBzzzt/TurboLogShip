@@ -57,5 +57,37 @@
   <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
   <ItemGroup>
     <Folder Include="Properties" />
+    <Folder Include="Security" />
+    <Folder Include="TurboLogShipping" />
+    <Folder Include="TurboLogShipping\Stored Procedures" />
+    <Folder Include="TurboLogShipping\User Defined Types" />
+    <Folder Include="dacpacs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="Security\TurboLogShipping.sql" />
+    <Build Include="TurboLogShipping\Stored Procedures\CustomLogShippingRestore.sql" />
+    <Build Include="TurboLogShipping\User Defined Types\txn_tbl.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <ArtifactReference Include="dacpacs\msdb.dacpac">
+      <HintPath>dacpacs\msdb.dacpac</HintPath>
+      <SuppressMissingDependenciesErrors>False</SuppressMissingDependenciesErrors>
+      <DatabaseSqlCmdVariable>msdb</DatabaseSqlCmdVariable>
+    </ArtifactReference>
+    <ArtifactReference Include="dacpacs\master.dacpac">
+      <HintPath>dacpacs\master.dacpac</HintPath>
+      <SuppressMissingDependenciesErrors>False</SuppressMissingDependenciesErrors>
+      <DatabaseSqlCmdVariable>master</DatabaseSqlCmdVariable>
+    </ArtifactReference>
+  </ItemGroup>
+  <ItemGroup>
+    <SqlCmdVariable Include="master">
+      <DefaultValue>master</DefaultValue>
+      <Value>$(SqlCmdVar__2)</Value>
+    </SqlCmdVariable>
+    <SqlCmdVariable Include="msdb">
+      <DefaultValue>msdb</DefaultValue>
+      <Value>$(SqlCmdVar__1)</Value>
+    </SqlCmdVariable>
   </ItemGroup>
 </Project>

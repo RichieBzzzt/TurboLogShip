@@ -22,15 +22,15 @@ DECLARE @Debug BIT = 0;-- req'd for troubleshooting
 DECLARE @maxSessionId INT
 
 SELECT @maxSessionId = MAX(session_id)
-FROM msdb.dbo.syssessions
+FROM [$(msdb)].dbo.syssessions
 
 SELECT @Path = backup_destination_directory
-FROM msdb.dbo.log_shipping_secondary scndry
-INNER JOIN msdb.dbo.log_shipping_secondary_databases db ON db.secondary_id = scndry.secondary_id
+FROM [$(msdb)].dbo.log_shipping_secondary scndry
+INNER JOIN [$(msdb)].dbo.log_shipping_secondary_databases db ON db.secondary_id = scndry.secondary_id
 WHERE db.secondary_database = @Database;
 
 SELECT @FolderDbNameLength = LEN(last_restored_file) - CHARINDEX('\', REVERSE(last_restored_file)) + 1
-FROM msdb.dbo.log_shipping_secondary_databases db
+FROM [$(msdb)].dbo.log_shipping_secondary_databases db
 WHERE db.secondary_database = @Database;
 
 SET @FolderDbNameLength = @FolderDbNameLength + LEN(@database) + 1;
@@ -39,7 +39,7 @@ IF @Debug = 1
 BEGIN
 	SELECT *
 	INTO #history
-	FROM MSDB.DBO.log_shipping_secondary_databases;--during debug we keep a history of the files restored, their time of restore, and restore settings 
+	FROM [$(msdb)].DBO.log_shipping_secondary_databases;--during debug we keep a history of the files restored, their time of restore, and restore settings 
 END;
 
 /*
@@ -55,7 +55,7 @@ INSERT @txn (
 	,DEPTH
 	,isfile
 	)
-EXECUTE master.sys.xp_dirtree @Path
+EXECUTE [$(master)].sys.xp_dirtree @Path
 	,1
 	,1;
 
@@ -76,7 +76,7 @@ SELECT @Count = COUNT(*)
 FROM @txn t
 WHERE t.BackupInt > (
 		SELECT CAST(RIGHT(LEFT(last_restored_file, LEN(last_restored_file) - @FileTypeLength), LEN(last_restored_file) - (@FolderDbNameLength + @FileTypeLength)) AS BIGINT)
-		FROM msdb.dbo.log_shipping_secondary_databases
+		FROM [$(msdb)].dbo.log_shipping_secondary_databases
 		WHERE secondary_database = @Database
 		);
 
@@ -86,7 +86,7 @@ BEGIN
 	FROM @txn t
 	WHERE t.BackupInt > (
 			SELECT CAST(RIGHT(LEFT(last_restored_file, LEN(last_restored_file) - @FileTypeLength), LEN(last_restored_file) - (@FolderDbNameLength + @FileTypeLength)) AS BIGINT)
-			FROM msdb.dbo.log_shipping_secondary_databases
+			FROM [$(msdb)].dbo.log_shipping_secondary_databases
 			WHERE secondary_database = @Database
 			);
 
@@ -108,7 +108,7 @@ correct (ie count is 1 and number of files to restore is actually 1.
 */
 WHILE @Count > 1
 BEGIN
-	EXECUTE master.sys.sp_change_log_shipping_secondary_database @secondary_database = @Database
+	EXECUTE [$(master)].sys.sp_change_log_shipping_secondary_database @secondary_database = @Database
 		,@disconnect_users = 1 -- disconnect users 
 		,@restore_mode = 0 -- restore log with NORECOVERY
 		,@restore_all = 0;-- stops after one file has been restored
@@ -121,18 +121,18 @@ running and will kick off the job to restore again.
 */
 	WHILE (
 			SELECT 1
-			FROM msdb.dbo.sysjobs_view job
-			INNER JOIN msdb.dbo.sysjobactivity activity ON job.job_id = activity.job_id
-			WHERE activity.run_Requested_date IS NOT NULL
+			FROM [$(msdb)].dbo.sysjobs_view job
+			INNER JOIN [$(msdb)].dbo.sysjobactivity activity ON job.job_id = activity.job_id
+			WHERE activity.run_requested_date IS NOT NULL
 				AND activity.stop_execution_date IS NULL
-				AND job.NAME = @RestoreJobName
+				AND job.name = @RestoreJobName
 				AND activity.session_id = @maxSessionId
 			) = 1
 	BEGIN
 		WAITFOR DELAY '00:00:00:100';
 	END;
 
-	EXECUTE msdb.dbo.sp_start_job @RestoreJobName;
+	EXECUTE [$(msdb)].dbo.sp_start_job @RestoreJobName;
 
 /* now we need ot wait agin until the job has completed.
 This is because we check for any files that have been 
@@ -141,11 +141,11 @@ fully below*/
 
 	WHILE (
 			SELECT 1
-			FROM msdb.dbo.sysjobs_view job
-			INNER JOIN msdb.dbo.sysjobactivity activity ON job.job_id = activity.job_id
-			WHERE activity.run_Requested_date IS NOT NULL
+			FROM [$(msdb)].dbo.sysjobs_view job
+			INNER JOIN [$(msdb)].dbo.sysjobactivity activity ON job.job_id = activity.job_id
+			WHERE activity.run_requested_date IS NOT NULL
 				AND activity.stop_execution_date IS NULL
-				AND job.NAME = @RestoreJobName
+				AND job.name = @RestoreJobName
 				AND activity.session_id = @maxSessionId
 			) = 1
 	BEGIN
@@ -156,10 +156,10 @@ fully below*/
 	BEGIN
 		INSERT INTO #history
 		SELECT *
-		FROM msdb.dbo.log_shipping_secondary_databases;
+		FROM [$(msdb)].dbo.log_shipping_secondary_databases;
 
 		SELECT *
-		FROM msdb.dbo.log_shipping_secondary_databases;
+		FROM [$(msdb)].dbo.log_shipping_secondary_databases;
 	END;
 
 	IF @Debug = 1
@@ -182,7 +182,7 @@ fully below*/
 		,DEPTH
 		,isfile
 		)
-	EXECUTE master.sys.xp_dirtree @Path
+	EXECUTE [$(master)].sys.xp_dirtree @Path
 		,1
 		,1;
 
@@ -209,7 +209,7 @@ fully below*/
 	FROM @txn t
 	WHERE t.BackupInt > (
 			SELECT CAST(RIGHT(LEFT(last_restored_file, LEN(last_restored_file) - @FileTypeLength), LEN(last_restored_file) - (@FolderDbNameLength + @FileTypeLength)) AS BIGINT)
-			FROM msdb.dbo.log_shipping_secondary_databases
+			FROM [$(msdb)].dbo.log_shipping_secondary_databases
 			WHERE secondary_database = @Database
 			);
 
@@ -219,7 +219,7 @@ fully below*/
 		FROM @txn t
 		WHERE t.BackupInt > (
 				SELECT CAST(RIGHT(LEFT(last_restored_file, LEN(last_restored_file) - @FileTypeLength), LEN(last_restored_file) - (@FolderDbNameLength + @FileTypeLength)) AS BIGINT)
-				FROM msdb.dbo.log_shipping_secondary_databases
+				FROM [$(msdb)].dbo.log_shipping_secondary_databases
 				WHERE secondary_database = @Database
 				);
 	END;
@@ -240,31 +240,31 @@ END;
 	*/
 WHILE (
 		SELECT 1
-			FROM msdb.dbo.sysjobs_view job
-			INNER JOIN msdb.dbo.sysjobactivity activity ON job.job_id = activity.job_id
-			WHERE activity.run_Requested_date IS NOT NULL
+			FROM [$(msdb)].dbo.sysjobs_view job
+			INNER JOIN [$(msdb)].dbo.sysjobactivity activity ON job.job_id = activity.job_id
+			WHERE activity.run_requested_date IS NOT NULL
 				AND activity.stop_execution_date IS NULL
-				AND job.NAME = @RestoreJobName
+				AND job.name = @RestoreJobName
 				AND activity.session_id = @maxSessionId
 		) = 1
 BEGIN
 	WAITFOR DELAY '00:00:00:100';
 END;
 
-EXECUTE master.sys.sp_change_log_shipping_secondary_database @secondary_database = @Database
+EXECUTE [$(master)].sys.sp_change_log_shipping_secondary_database @secondary_database = @Database
 	,@disconnect_users = 1 -- disconnect users
 	,@restore_mode = 1 -- restore log with STANDBY 
 	,@restore_all = 1;-- restore all logs 
 
-EXECUTE msdb.dbo.sp_start_job @RestoreJobName;
+EXECUTE [$(msdb)].dbo.sp_start_job @RestoreJobName;
 
 WHILE (
 		SELECT 1
-			FROM msdb.dbo.sysjobs_view job
-			INNER JOIN msdb.dbo.sysjobactivity activity ON job.job_id = activity.job_id
-			WHERE activity.run_Requested_date IS NOT NULL
+			FROM [$(msdb)].dbo.sysjobs_view job
+			INNER JOIN [$(msdb)].dbo.sysjobactivity activity ON job.job_id = activity.job_id
+			WHERE activity.run_requested_date IS NOT NULL
 				AND activity.stop_execution_date IS NULL
-				AND job.NAME = @RestoreJobName
+				AND job.name = @RestoreJobName
 				AND activity.session_id = @maxSessionId
 		) = 1
 BEGIN
@@ -275,10 +275,10 @@ IF @Debug = 1
 BEGIN
 	INSERT INTO #history
 	SELECT *
-	FROM MSDB.DBO.log_shipping_secondary_databases;
+	FROM [$(msdb)].DBO.log_shipping_secondary_databases;
 
 	SELECT *
-	FROM MSDB.DBO.log_shipping_secondary_databases;
+	FROM [$(msdb)].DBO.log_shipping_secondary_databases;
 END;
 
 SET NOCOUNT OFF;
