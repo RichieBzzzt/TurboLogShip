@@ -90,4 +90,8 @@
       <Value>$(SqlCmdVar__1)</Value>
     </SqlCmdVariable>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="dacpacs\master.dacpac" />
+    <None Include="dacpacs\msdb.dacpac" />
+  </ItemGroup>
 </Project>
