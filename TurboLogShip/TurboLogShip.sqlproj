@@ -62,13 +62,11 @@
     <Folder Include="TurboLogShipping\Stored Procedures" />
     <Folder Include="TurboLogShipping\User Defined Types" />
     <Folder Include="dacpacs" />
-    <Folder Include="TurboLogShipping\Tables" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="Security\TurboLogShipping.sql" />
     <Build Include="TurboLogShipping\Stored Procedures\CustomLogShippingRestore.sql" />
     <Build Include="TurboLogShipping\User Defined Types\txn_tbl.sql" />
-    <Build Include="TurboLogShipping\Tables\TurboLogShippingLogging.sql" />
   </ItemGroup>
   <ItemGroup>
     <ArtifactReference Include="dacpacs\msdb.dacpac">
